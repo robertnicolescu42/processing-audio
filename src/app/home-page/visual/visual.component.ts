@@ -5,8 +5,8 @@ import * as Tone from 'tone';
 
 @Component({
   selector: 'app-visual',
-  imports: [FormsModule],
   standalone: true,
+  imports: [FormsModule],
   templateUrl: './visual.component.html',
   styleUrls: ['./visual.component.css'],
 })
@@ -14,72 +14,90 @@ export class VisualComponent implements OnInit {
   canvas: any;
   oscillators: any[] = [];
   reverb: any;
-  freq1 = 220; // Frequency for oscillator 1
-  freq2 = 330; // Frequency for oscillator 2
-  phase1 = 0; // Phase for oscillator 1
-  phase2 = 90; // Phase for oscillator 2
-  reverbValue = 1; // Start with full reverb
-  maxReverbValue = 5; // Max reverb level for the slider
-  reverbDecay = 10; // Initial decay time for reverb (longer reverb tail)
-  maxReverbDecay = 20; // Max value for the decay slider
+  numOscillators = 1; // Start with one oscillator
+  freq = []; // Frequencies for oscillators
+  volumeControl = -15; // Start with a reasonable volume
+  reverbValue = 1; // Start with reverb wetness
+  reverbDecay = 15; // Set initial decay for long-lasting reverb
+  maxReverbDecay = 30; // Maximum decay time for a larger reverb tail
   isPlaying = false; // Track play state
+  time = 0; // Time variable for animation
 
   constructor() {}
 
   ngOnInit() {
-    // Create two oscillators (without starting them when the component initalizes)
-    this.oscillators[0] = new Tone.Oscillator(this.freq1, 'sine');
-    this.oscillators[1] = new Tone.Oscillator(this.freq2, 'sine');
-
-    // Create reverb with a long decay and connect the oscillators
-    this.reverb = new Tone.Reverb({ decay: this.reverbDecay }).toDestination();
-    this.oscillators[0].connect(this.reverb);
-    this.oscillators[1].connect(this.reverb);
-
-    // Set initial reverb wetness
-    this.reverb.wet.value = this.reverbValue;
+    // this.initializeOscillators();
 
     const sketch = (s) => {
       s.setup = () => {
         let canvas2 = s.createCanvas(s.windowWidth - 730, s.windowHeight - 180);
         canvas2.parent('sketch-holder');
-        s.background(0);
+        s.background(10);
+        s.noFill();
+        s.stroke(255, 100);
       };
 
       s.draw = () => {
-        s.background(0);
+        s.background(10);
+        s.strokeWeight(1);
 
-        // Map frequencies to visual size
-        let radius1 = s.map(this.freq1, 100, 1000, 50, 200);
-        let radius2 = s.map(this.freq2, 100, 1000, 50, 200);
+        // Lissajous curves based on oscillators' frequencies
+        for (let i = 0; i < this.numOscillators; i++) {
+          let freq = this.freq[i];
+          let xAmplitude = s.map(freq, 100, 1000, 100, s.width / 2);
+          let yAmplitude = s.map(freq, 100, 1000, 100, s.height / 2);
 
-        // Map phases to positions
-        let x1 = s.map(s.sin(this.phase1), -1, 1, 100, s.width - 100);
-        let x2 = s.map(s.sin(this.phase2), -1, 1, 100, s.width - 100);
+          s.beginShape();
 
-        // Draw spheres based on sound properties
-        s.fill(148, 0, 211);
-        s.ellipse(x1, s.height / 2, radius1, radius1);
-
-        s.fill(0, 255, 0);
-        s.ellipse(x2, s.height / 2 + 100, radius2, radius2);
-
-        // Update phases for animation
-        if (this.isPlaying) {
-          this.phase1 += 0.01;
-          this.phase2 += 0.01;
+          for (let t = 0; t < s.TWO_PI; t += 0.01) {
+            // Lissajous curve formula equations
+            // x = xAmplitude * sin(t + time * 0.01 * (i + 1))
+            // y = yAmplitude * sin(2 * t + time * 0.01 * (i + 1))
+            let x = xAmplitude * s.sin(t + this.time * 0.01 * (i + 1));
+            let y = yAmplitude * s.sin(2 * t + this.time * 0.01 * (i + 1));
+            s.vertex(s.width / 2 + x, s.height / 2 + y);
+          }
+          s.endShape();
         }
+
+        // This could be a slider in itself
+        this.time += 0.5; // Increment time for continuous animation
       };
     };
 
     this.canvas = new p5(sketch);
   }
 
+  initializeOscillators() {
+    this.stopOscillators();
+
+    this.oscillators = [];
+    this.freq = [];
+
+    // Reinitialize reverb with updated settings
+    if (this.reverb) this.reverb.dispose(); // Dispose of old reverb
+    this.reverb = new Tone.Reverb({ decay: this.reverbDecay }).toDestination();
+    this.reverb.wet.value = this.reverbValue;
+
+    // Create oscillators and connect them to reverb
+    for (let i = 0; i < this.numOscillators; i++) {
+      const freq = 200 + i * 50; // Frequencies spaced by 50 Hz
+      this.freq.push(freq);
+
+      const osc = new Tone.Oscillator(freq, 'sine').start();
+      // Adjust volume based on number of oscillators to prevent clipping / loudness issues
+      osc.volume.value =
+        this.volumeControl - 3 * Math.log2(this.numOscillators);
+      osc.connect(this.reverb);
+
+      this.oscillators.push(osc);
+    }
+  }
+
   // Start the sound
   startSound() {
     if (!this.isPlaying) {
-      this.oscillators[0].start();
-      this.oscillators[1].start();
+      this.initializeOscillators();
       Tone.Transport.start();
       this.isPlaying = true;
     }
@@ -88,20 +106,27 @@ export class VisualComponent implements OnInit {
   // Stop the sound
   stopSound() {
     if (this.isPlaying) {
-      this.oscillators[0].stop();
-      this.oscillators[1].stop();
-      Tone.Transport.stop();
+      this.stopOscillators();
+      Tone.Transport.stop(); // Stop Tone.js transport
       this.isPlaying = false;
     }
   }
 
-  updateSound() {
-    this.oscillators[0].frequency.value = this.freq1;
-    this.oscillators[1].frequency.value = this.freq2;
+  // Stop all oscillators
+  stopOscillators() {
+    this.oscillators.forEach((osc) => osc.stop());
+    this.oscillators = [];
+  }
 
+  // Handle oscillator count change
+  handleOscillatorChange(event: any) {
+    const selectedValue = event.target.value;
+    this.numOscillators = parseInt(selectedValue, 10);
+    this.initializeOscillators(); // Re-initialize oscillators based on selection
+  }
+
+  updateSoundSettings() {
     this.reverb.wet.value = this.reverbValue;
     this.reverb.decay = this.reverbDecay;
-
-    // Phases are updated only when playing (see draw method)
   }
 }

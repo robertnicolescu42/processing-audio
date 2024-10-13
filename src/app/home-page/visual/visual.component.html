@@ -1,50 +1,47 @@
-<div class="visual-square">
-  <div class="h-100 d-flex align-items-center justify-content-center">
-    <div class="sketch-container">
-      <div id="sketch-holder"></div>
+<div class="visual-square container-fluid bg-dark text-light">
+  <div class="row h-100">
+    <div class="col-12 d-flex align-items-center justify-content-center">
+      <div class="sketch-container" id="sketch-holder"></div>
     </div>
   </div>
 
-  <div class="controls">
-    <label>Frequency 1</label>
-    <input
-      type="range"
-      min="100"
-      max="1000"
-      [(ngModel)]="freq1"
-      (input)="updateSound()"
-    />
+  <div class="controls my-4 p-3 bg-secondary rounded shadow">
+    <h5 class="mb-3">Controls</h5>
 
-    <label>Frequency 2</label>
-    <input
-      type="range"
-      min="100"
-      max="1000"
-      [(ngModel)]="freq2"
-      (input)="updateSound()"
-    />
+    <div class="mb-3">
+      <label for="oscillator-count" class="form-label"
+        >Number of Oscillators</label
+      >
+      <select
+        id="oscillator-count"
+        class="form-select bg-dark text-light"
+        (change)="handleOscillatorChange($event)"
+      >
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+      </select>
+    </div>
 
-    <label>Reverb Wetness</label>
-    <input
-      type="range"
-      min="0"
-      [max]="maxReverbValue"
-      step="0.01"
-      [(ngModel)]="reverbValue"
-      (input)="updateSound()"
-    />
+    <div class="mb-3">
+      <label for="reverb-decay" class="form-label">Reverb Decay</label>
+      <input
+        id="reverb-decay"
+        type="range"
+        min="1"
+        [max]="maxReverbDecay"
+        step="1"
+        [(ngModel)]="reverbDecay"
+        (input)="updateSoundSettings()"
+        class="form-range"
+      />
+    </div>
 
-    <label>Reverb Decay</label>
-    <input
-      type="range"
-      min="1"
-      [max]="maxReverbDecay"
-      step="1"
-      [(ngModel)]="reverbDecay"
-      (input)="updateSound()"
-    />
-
-    <button (click)="startSound()">Start</button>
-    <button (click)="stopSound()">Stop</button>
+    <div class="d-flex justify-content-between">
+      <button (click)="startSound()" class="btn btn-success">Start</button>
+      <button (click)="stopSound()" class="btn btn-danger">Stop</button>
+    </div>
   </div>
 </div>
