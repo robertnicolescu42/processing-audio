@@ -1,3 +1,50 @@
 <div class="visual-square">
-  <p>visual works!</p>
+  <div class="h-100 d-flex align-items-center justify-content-center">
+    <div class="sketch-container">
+      <div id="sketch-holder"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>Frequency 1</label>
+    <input
+      type="range"
+      min="100"
+      max="1000"
+      [(ngModel)]="freq1"
+      (input)="updateSound()"
+    />
+
+    <label>Frequency 2</label>
+    <input
+      type="range"
+      min="100"
+      max="1000"
+      [(ngModel)]="freq2"
+      (input)="updateSound()"
+    />
+
+    <label>Reverb Wetness</label>
+    <input
+      type="range"
+      min="0"
+      [max]="maxReverbValue"
+      step="0.01"
+      [(ngModel)]="reverbValue"
+      (input)="updateSound()"
+    />
+
+    <label>Reverb Decay</label>
+    <input
+      type="range"
+      min="1"
+      [max]="maxReverbDecay"
+      step="1"
+      [(ngModel)]="reverbDecay"
+      (input)="updateSound()"
+    />
+
+    <button (click)="startSound()">Start</button>
+    <button (click)="stopSound()">Stop</button>
+  </div>
 </div>
